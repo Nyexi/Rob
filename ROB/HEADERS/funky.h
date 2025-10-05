@@ -35,7 +35,9 @@ FILE* readFile_b(char* name);
 bool checkFileType(char* name);
 
 
-
+/* Writes the requierd bytes to the file named
+ * name, to make it's header a WAV file */
+bool writeWavHeaders(char* name);
 
 
 

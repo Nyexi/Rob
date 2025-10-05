@@ -22,6 +22,14 @@ int main(int argc, char* argv[]) {
       printf("Error: Failed to create %s \n", argv[2]);  // return error if file failed to create
       return 102;
     }
+    //      TODO:
+    // Add function to write the required 
+    // header chunks to name.wav
+    bool header_written = writeWavHeaders(argv[2]);
+    if (header_written == false) {
+      printf("Failed to write the WAV header to %s \n", argv[2]);
+      return 102;
+    }
   }
   
   if (strcmp(argv[1], "-o") == 0 || strcmp(argv[1], "-open") == 0) {

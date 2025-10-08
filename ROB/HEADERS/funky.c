@@ -1,4 +1,5 @@
 #include "funky.h"
+#include <ctype.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -6,8 +7,14 @@
 #include <stdio.h>
 #include <string.h>
 
-// Displays the diffrent commands 
-// And overall how to use the program
+/* This struct holds the audio format information 
+ * For more information please look at --
+ * http://soundfile.sapp.org/doc/WaveFormat/
+ * i found it very usfull. --Nyexi */
+
+
+/* Displays the diffrent commands 
+ * And overall how to use the program */
 void fn_help(void) {
 
   printf("Creating a new file.\n");
@@ -18,9 +25,9 @@ void fn_help(void) {
 
 }
 
-//  My dumbass tryed to pass sizeof(arr) as the second argument
-//  in fwrite(). I spent an hour trying to figure out the problom(?)
-//  i'm tired, please inore the inconsitency here.. --Nyexi :3
+/* My dumbass tryed to pass sizeof(arr) as the second argument
+ * in fwrite(). I spent an hour trying to figure out the problem(?)
+ * i'm tired, please inore the inconsitency here.. --Nyexi :3 */
 bool writeWavHeaders(char* name) {
   
   FILE* fptr = fopen(name, "w"); // open file in Write mode to replace any junk with RIFF
@@ -31,12 +38,12 @@ bool writeWavHeaders(char* name) {
   uint8_t riff[4] = {0x52, 0x49, 0x46, 0x46};     // the first chunck
   size_t riff_writen = fwrite(riff, 1, 4, fptr);  // Write RIFF to the first chunk
   if (riff_writen != sizeof(riff)) {
-    printf("Error: failed to write RIFF in writeWavHeaders\n");         // if the bytes writen != the num of bytes we want to write, return
+    printf("Error: failed to write RIFF in writeWavHeaders\n");   // if the bytes writen != the num of bytes we want to write, return
     return  false;
   }
   
   fclose(fptr); fptr = NULL;
-  fptr = fopen(name, "a");  // change the file mode to append, to add the rest
+  fptr = fopen(name, "ab");  // change the file mode to append, to add the rest
   if (fptr == NULL) {
     return false;           // return early if there is no file
   }
@@ -44,21 +51,21 @@ bool writeWavHeaders(char* name) {
   uint32_t temp_chunkSize = UINT32_MAX;
   size_t chunkSize_writen = fwrite(&temp_chunkSize, 1, sizeof(uint32_t), fptr);   // Write a temp valuse to the chunkSize
   if (chunkSize_writen != sizeof(uint32_t)) {
-    printf("Error: failed to write the chunkSize in writeWavHeaders\n"); // if the bytes writen != the num of bytes we want to write, return
+    printf("Error: failed to write the chunkSize in writeWavHeaders\n");  // if the bytes writen != the num of bytes we want to write, return
     return false;
   } 
 
   uint8_t wave[4] = {0x57, 0x41, 0x56, 0x45};     // the first chunck
   size_t wave_writen = fwrite(wave, 1, 4, fptr);  // Write WAVE the third chunk
   if (wave_writen != sizeof(wave)) {
-    printf("Error: failed to write WAVE in writeWavHeaders\n");         // if the bytes writen != the num of bytes we want to write, return
+    printf("Error: failed to write WAVE in writeWavHeaders\n");  // if the bytes writen != the num of bytes we want to write, return
     return  false;
   }
 
   char fmt[4] = {'f', 'm', 't', ' '};                       // the first chunck
   size_t fmt_writen = fwrite(fmt, 1, sizeof(fmt), fptr);    // Write fmt the forth chunk
   if (fmt_writen != sizeof(fmt)) {
-    printf("Error: failed to write fmt in writeWavHeaders\n");          // if the bytes writen != the num of bytes we want to write, return
+    printf("Error: failed to write fmt in writeWavHeaders\n");  // if the bytes writen != the num of bytes we want to write, return
     return  false;
   }
   
@@ -172,3 +179,74 @@ FILE* readFile_b(char* name) {
   }
   return fptr;
 }
+
+/* Taks the audioFormat struct, and the name
+ * of the file to opern, and writes the 
+ * data to the file. return true on sucsessfull
+ * completion, and false on failure */
+bool writeAudioFormat(audioFormat fmt, char* fname) {
+  
+  FILE* fptr = fopen(fname, "ab");  // open the file 'fname' to append mode
+  if (fptr == NULL) {
+    printf("Error: failed to open the file\n");
+    return false;                   // error handling if file open fails
+  }
+  
+  uint32_t subChunk = 16; 
+  size_t wn_sizeChunk = fwrite(&subChunk, 1, sizeof(uint32_t), fptr);   // write 16 to Subchunk1 Size
+  if (wn_sizeChunk < sizeof(uint32_t)){
+    printf("Error: Failed on Subchunk1\n");   // if bytes writen is less then disired amount return error
+    return false;
+  }
+
+  size_t wn_compLevel = fwrite(&fmt.compression, 1, sizeof(uint16_t), fptr);  // write the compression level
+  if (wn_compLevel < sizeof(uint16_t)) {
+    printf("Error: Failed on compression level\n");   // if bytes writen is less then disired amount return error
+    return false;
+  }
+
+  size_t wn_chanals = fwrite(&fmt.chanels, 1, sizeof(uint16_t), fptr);  // write the chanels 
+  if (wn_chanals < sizeof(uint16_t)) {
+    printf("Error: Failed on chanels \n");   // if bytes writen is less then disired amount return error
+    return false;
+  }
+  size_t wn_sampleRate= fwrite(&fmt.sampleRate, 1, sizeof(uint32_t), fptr);  // write the chanels 
+  if (wn_sampleRate < sizeof(uint32_t)) {
+    printf("Error: Failed on sampleRate\n");   // if bytes writen is less then disired amount return error
+    return false;
+  } 
+
+  size_t wn_byteRate = fwrite(&fmt.byteRate, 1, sizeof(uint32_t), fptr);  // write the byterate 
+  if (wn_byteRate < sizeof(uint32_t)) {
+    printf("Error: Failed on byteRate\n");   // if bytes writen is less then disired amount return error
+    return false;
+  }
+  
+  size_t wn_blockAlign = fwrite(&fmt.blockAlign, 1, sizeof(uint16_t), fptr);  // write the blockAlign 
+  if (wn_blockAlign < sizeof(uint16_t)) {
+    printf("Error: Failed on sampleRate\n");   // if bytes writen is less then disired amount return error
+    return false;
+  }
+  size_t wn_BitsPerSample = fwrite(&fmt.bitsPerSample, 1, sizeof(uint16_t), fptr);  // write the bitsPerSample 
+  if (wn_BitsPerSample< sizeof(uint16_t)) {
+    printf("Error: Failed on sampleRate\n");   // if bytes writen is less then disired amount return error
+    return false;
+  }
+
+  fclose(fptr);   // free the file pointer before exit
+  return true;
+}
+
+/* gets input when not char 
+ * i'm too lazy to do better input
+ * validation at the moment. --Nyexi */
+int getIntInput(char msg[]) {
+  int n = 0;
+  while (n == 0) {
+    printf("%s", msg);  // print the message
+    scanf("%d", &n);  // store the input in n
+  }
+
+  return n;
+}
+

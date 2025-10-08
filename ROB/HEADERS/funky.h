@@ -4,7 +4,20 @@
 
 #include <stdbool.h>  // for bool values
 #include <stdio.h>    // include to define FILE type
+#include <stdint.h>   // for specific bit with ints
                     
+/* This struct holds the audio format information 
+ * For more information please look at --
+ * http://soundfile.sapp.org/doc/WaveFormat/
+ * i found it very usfull. --Nyexi */
+typedef struct {
+  uint16_t compression;             // valuse other than 1 mean some sort of compression
+  uint16_t chanels;         // number of audio chanels, 1 mono, 2 stereo--
+  uint32_t sampleRate;      // think of this like quality, kinda...
+  uint32_t byteRate;        // SampleRate * NumChannels * BitsPerSample/8
+  uint16_t bitsPerSample;   // 8 bits = 8, 16 bits = 16, etc.
+  uint16_t blockAlign;      // NumChannels * BitsPerSample / 8
+} audioFormat ;
 
 /*prints the commands*/
 void fn_help(void);  
@@ -39,6 +52,16 @@ bool checkFileType(char* name);
  * name, to make it's header a WAV file */
 bool writeWavHeaders(char* name);
 
+/* Writes the data stored in the audioFormat struct
+ * to the file specified by 'fname'
+ * Returns false if failed at some point 
+ * and Returns true if it succeded */
+bool writeAudioFormat(audioFormat fmt, char* fname);
 
+/* Take a message from the user
+ * prints it, and loops until 
+ * input does not contain a char.
+ * TODO: make input validation better..*/
+int getIntInput(char msg[]);
 
 #endif
